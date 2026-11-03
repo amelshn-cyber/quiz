@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz – Dossiers et fichiers | 7ème année</title>
+<style>
+  :root { --blue:#1479e8; --dark:#173b78; --pale:#edf7ff; --green:#1c9b55; --orange:#f59a23; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Arial, Helvetica, sans-serif; background:linear-gradient(135deg,#eaf5ff,#fff9e9); color:#18345f; }
+  .wrap { max-width:900px; margin:24px auto; padding:16px; }
+  header { text-align:center; background:#fff; border:2px solid #a8d9ff; border-radius:20px; padding:22px 16px; box-shadow:0 5px 18px #174b8314; }
+  h1 { margin:0 0 8px; color:#145ac2; font-size:clamp(1.5rem,4vw,2.3rem); }
+  header p { margin:5px 0; }
+  .meta { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .pill { background:#e8f4ff; border:1px solid #9bd2ff; border-radius:99px; padding:7px 12px; font-weight:bold; }
+  .progress { height:9px; background:#dbeafa; border-radius:10px; overflow:hidden; margin:18px 0; }
+  .bar { height:100%; width:0; background:var(--blue); transition:width .25s; }
+  .card { background:#fff; border:2px solid #b9e3ff; border-radius:18px; padding:22px; box-shadow:0 5px 18px #174b8310; }
+  .qtop { display:flex; justify-content:space-between; align-items:center; gap:10px; color:#1479e8; font-weight:bold; }
+  .tag { font-size:.82rem; background:#eaf5ff; border-radius:8px; padding:5px 9px; }
+  h2 { font-size:1.25rem; line-height:1.45; margin:18px 0; color:#173b78; }
+  .choices { display:grid; gap:10px; }
+  .choice { display:flex; align-items:flex-start; gap:10px; text-align:left; border:2px solid #d4e6f6; background:#fbfdff; border-radius:12px; padding:13px 14px; color:#18345f; font-size:1rem; cursor:pointer; }
+  .choice:hover { border-color:#64b8ff; background:#f1f9ff; }
+  .choice.selected { border-color:#1479e8; background:#eaf5ff; }
+  .choice.correct { border-color:#20a35a; background:#eaf9ef; }
+  .choice.wrong { border-color:#e36b55; background:#fff0ec; }
+  .letter { display:inline-grid; place-items:center; min-width:27px; height:27px; border-radius:8px; background:#dceeff; color:#145ac2; font-weight:bold; }
+  .feedback { display:none; margin-top:14px; padding:12px 14px; border-radius:10px; line-height:1.45; }
+  .feedback.show { display:block; }
+  .feedback.good { background:#eaf9ef; color:#176b3e; border:1px solid #9edbb6; }
+  .feedback.bad { background:#fff3e8; color:#884b10; border:1px solid #f2c58b; }
+  .actions { display:flex; justify-content:space-between; gap:10px; margin-top:20px; flex-wrap:wrap; }
+  button { border:0; border-radius:11px; padding:12px 18px; font-size:1rem; font-weight:bold; cursor:pointer; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .primary { background:#1479e8; color:#fff; }
+  .secondary { background:#e9f2fc; color:#174b8e; }
+  .result { display:none; text-align:center; }
+  .result.show { display:block; }
+  .score { font-size:3rem; font-weight:bold; color:#1479e8; margin:12px 0; }
+  .review { text-align:left; margin-top:18px; }
+  .review li { margin:9px 0; line-height:1.45; }
+  footer { text-align:center; color:#56749a; font-size:.85rem; padding:18px; }
+  @media(max-width:560px) { .wrap{padding:10px;margin:10px auto;} .card{padding:16px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📁 Quiz : Dossiers et fichiers</h1>
+    <p><strong>Informatique – 7ème année de base</strong></p>
+    <p>Teste tes connaissances sur les dossiers, les fichiers, les noms et les extensions.</p>
+    <div class="meta"><span class="pill">10 questions</span><span class="pill">Choix multiples</span><span class="pill">Correction immédiate</span></div>
+  </header>
+  <div class="progress" aria-label="Progression"><div class="bar" id="bar"></div></div>
+  <section class="card" id="quiz">
+    <div class="qtop"><span id="counter">Question 1 / 10</span><span class="tag" id="type">Une seule réponse</span></div>
+    <h2 id="question"></h2>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback" role="status"></div>
+    <div class="actions"><button class="secondary" id="hintBtn">💡 Indice</button><button class="primary" id="nextBtn" disabled>Valider</button></div>
+    <div class="feedback" id="hint"></div>
+  </section>
+  <section class="card result" id="result">
+    <h2>Bravo ! Quiz terminé 🎉</h2>
+    <div class="score" id="score"></div>
+    <p id="message"></p>
+    <div class="review"><h3>À revoir</h3><ul id="reviewList"></ul></div>
+    <button class="primary" id="restart">Recommencer le quiz</button>
+  </section>
+  <footer>Prends ton temps et lis attentivement chaque question.</footer>
+</div>
+<script>
+const questions = [
+ {q:"Qu’est-ce qu’un dossier ?", opts:["Un objet qui peut contenir des dossiers et des fichiers","Un fichier de musique uniquement","Un périphérique de sortie","Une extension de fichier"], a:0, why:"Un dossier sert à organiser et peut contenir des fichiers ainsi que d’autres dossiers.", hint:"Pense à un contenant qui permet de ranger des éléments."},
+ {q:"Qu’est-ce qu’un fichier ?", opts:["Un ensemble de données (informations) de même nature","Un objet qui contient toujours plusieurs dossiers","Un écran d’ordinateur","Un type de clavier"], a:0, why:"Un fichier regroupe des données de même nature, par exemple un texte, une image ou une musique.", hint:"Un document enregistré sur l’ordinateur est souvent de cette catégorie."},
+ {q:"Dans le nom « vacances.mp3 », quel est le nom du fichier ?", opts:["mp3","vacances","vacances.mp3","."], a:1, why:"Le nom est « vacances » ; « .mp3 » est l’extension.", hint:"Le nom se trouve avant le point et l’extension."},
+ {q:"Dans « vacances.mp3 », quelle est l’extension ?", opts:["vacances","fichier","mp3",".mp3 seulement sans le point"], a:2, why:"L’extension est mp3. Elle est écrite après le point et indique le type du fichier.", hint:"Regarde la partie située après le point."},
+ {q:"À quoi sert généralement l’extension d’un fichier ?", opts:["À indiquer le type du fichier","À indiquer le nom du propriétaire","À augmenter la taille du fichier","À créer un dossier"], a:0, why:"L’extension aide à reconnaître le type du fichier et le logiciel qui peut l’ouvrir.", hint:"Elle aide l’ordinateur à reconnaître s’il s’agit d’une image, d’un son, etc."},
+ {q:"Quelle extension correspond à un fichier image ?", opts:[".mp3",".mp4",".jpg",".docx"], a:2, why:".jpg est une extension courante pour les images.", hint:"Parmi les extensions proposées, cherche celle utilisée pour les photos."},
+ {q:"Quel groupe contient uniquement des extensions de fichiers audio ?", opts:[".mp3 et .wav",".jpg et .png",".mp4 et .avi",".txt et .pdf"], a:0, why:".mp3 et .wav sont des formats audio ; les autres groupes correspondent à d’autres types.", hint:"Les fichiers audio contiennent de la musique ou du son."},
+ {q:"Quelle extension est associée à un fichier vidéo dans la fiche ?", opts:[".pdf",".avi",".gif",".txt"], a:1, why:".avi est présenté comme une extension vidéo dans la fiche.", hint:"Cherche une extension utilisée pour les vidéos."},
+ {q:"Quel fichier est généralement un document texte ?", opts:["photo.png","musique.wav","notes.docx","film.mp4"], a:2, why:".docx est un format de document texte créé notamment avec un traitement de texte.", hint:"Repère l’extension associée aux documents Word."},
+ {q:"Un fichier « devoir.pdf » est un fichier de type…", opts:["Audio","Image","PDF / document","Vidéo"], a:2, why:".pdf désigne un document au format PDF.", hint:"Le type se reconnaît grâce à l’extension après le point."}
+];
+let index=0, score=0, selected=null, locked=false, wrongItems=[];
+const $=id=>document.getElementById(id);
+function render(){
+ const item=questions[index]; selected=null; locked=false;
+ $("counter").textContent=`Question ${index+1} / ${questions.length}`;
+ $("bar").style.width=`${index/questions.length*100}%`;
+ $("question").textContent=item.q;
+ $("choices").innerHTML="";
+ $("feedback").className="feedback"; $("feedback").textContent="";
+ $("hint").className="feedback"; $("hint").textContent="";
+ $("hintBtn").disabled=false; $("nextBtn").disabled=true; $("nextBtn").textContent="Valider";
+ item.opts.forEach((opt,i)=>{
+  const btn=document.createElement("button"); btn.className="choice";
+  btn.innerHTML=`<span class="letter">${String.fromCharCode(65+i)}</span><span>${opt}</span>`;
+  btn.onclick=()=>choose(i,btn); $("choices").appendChild(btn);
+ });
+}
+function choose(i,btn){
+ if(locked)return; selected=i;
+ [...$("choices").children].forEach(c=>c.classList.remove("selected"));
+ btn.classList.add("selected"); $("nextBtn").disabled=false;
+}
+function validate(){
+ if(selected===null)return;
+ const item=questions[index]; locked=true;
+ [...$("choices").children].forEach((btn,i)=>{
+  btn.disabled=true;
+  if(i===item.a)btn.classList.add("correct");
+  if(i===selected && i!==item.a)btn.classList.add("wrong");
+ });
+ const good=selected===item.a;
+ if(good)score++; else wrongItems.push({q:item.q, correct:item.opts[item.a]});
+ $("feedback").className=`feedback show ${good?"good":"bad"}`;
+ $("feedback").textContent=(good?"Bonne réponse ! ":"Pas tout à fait. ")+item.why;
+ $("nextBtn").textContent=index===questions.length-1?"Voir mon résultat":"Question suivante";
+ $("nextBtn").disabled=false; $("hintBtn").disabled=true;
+}
+function next(){
+ if(!locked){validate();return;}
+ if(index<questions.length-1){index++;render();}
+ else showResult();
+}
+function showResult(){
+ $("quiz").style.display="none"; $("result").classList.add("show");
+ $("bar").style.width="100%"; $("score").textContent=`${score} / ${questions.length}`;
+ $("message").textContent=score===10?"Excellent ! Tu maîtrises très bien les dossiers et les fichiers.":score>=7?"Très bien ! Relis les explications des questions à revoir.":"Continue à t’entraîner : relis la fiche puis recommence le quiz.";
+ $("reviewList").innerHTML=wrongItems.length?wrongItems.map(x=>`<li><strong>${x.q}</strong><br>Réponse : ${x.correct}</li>`).join(""):"<li>Aucune erreur : toutes les réponses sont correctes !</li>";
+}
+$("nextBtn").onclick=next;
+$("hintBtn").onclick=()=>{ $("hint").className="feedback show"; $("hint").textContent="Indice : "+questions[index].hint; $("hintBtn").disabled=true; };
+$("restart").onclick=()=>{index=0;score=0;selected=null;locked=false;wrongItems=[];$("quiz").style.display="block";$("result").classList.remove("show");render();};
+render();
+</script>
+</body>
+</html>
